@@ -1,14 +1,20 @@
+// app/layout.tsx
 import type { Metadata } from "next";
-import { Inter, Outfit } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
-import { ClerkLoaded, ClerkProvider, GoogleOneTap } from "@clerk/nextjs";
+import { ClerkProvider, GoogleOneTap } from "@clerk/nextjs";
+import { ThemeProvider } from "./_components/providers/ThemeProvider";
 
-const inter = Outfit({ subsets: ["latin"] });
+const outfitFont = Outfit({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AI Course Generator",
+  title: "TutHub - AI Course Generator",
   description:
-    "AI Course Generator is a platform that allows users to easily create and generate educational courses using artificial intelligence. By simply entering course details like name, duration, number of chapters, and specifying if videos are included, AI generates the entire course structure along with relevant YouTube videos for each chapter.",
+    "TutHub is an AI-powered platform that allows users to easily create and generate educational courses. By simply entering course details, AI generates the entire course structure along with relevant YouTube videos and images for each chapter.",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#111827" },
+  ],
 };
 
 export default function RootLayout({
@@ -17,11 +23,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning className="h-full">
+      {" "}
       <ClerkProvider>
         <GoogleOneTap />
-        <body className={inter.className}>
-          <ClerkLoaded>{children}</ClerkLoaded>
+        <body
+          className={`${outfitFont.className} flex flex-col min-h-screen bg-background text-foreground`}
+        >
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
         </body>
       </ClerkProvider>
     </html>

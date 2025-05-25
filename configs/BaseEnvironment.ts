@@ -18,6 +18,9 @@ export class BaseEnvironment {
     FIREBASE_APP_ID: "my-firebase-app-id",
     FIREBASE_MEASUREMENT_ID: "my-firebase-measurement-id",
     YOUTUBE_API_KEY: "my-youtube-api-key",
+    PEXELS_API_KEY: "default-pexels-key",
+    RAZORPAY_KEY_ID: "default-razorpay-key-id",
+    RAZORPAY_KEY_SECRET: "default-razorpay-key-secret",
   };
 
   get environment(): Environment {
@@ -98,6 +101,27 @@ export class BaseEnvironment {
     return (
       process.env.NEXT_PUBLIC_YOUTUBE_API_KEY! ||
       this.defaultEnvironmentValues.YOUTUBE_API_KEY
+    );
+  }
+
+  get RAZORPAY_KEY_ID(): string {
+    return (
+      process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID! ||
+      this.defaultEnvironmentValues.RAZORPAY_KEY_ID
+    );
+  }
+
+  get RAZORPAY_KEY_SECRET(): string {
+    return (
+      process.env.RAZORPAY_KEY_SECRET! ||
+      this.defaultEnvironmentValues.RAZORPAY_KEY_SECRET
+    );
+  }
+
+  get PEXELS_API_KEY(): string {
+    return (
+      process.env.NEXT_PUBLIC_PEXELS_API_KEY! ||
+      this.defaultEnvironmentValues.PEXELS_API_KEY
     );
   }
 }

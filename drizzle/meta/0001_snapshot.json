@@ -1,0 +1,140 @@
+{
+  "id": "f88e7247-b4c7-4c0c-a6ec-30c2d9988c6a",
+  "prevId": "cc594728-ed23-426b-9c66-91336f529d28",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.courseChapters": {
+      "name": "courseChapters",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "courseId": {
+          "name": "courseId",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "chapterId": {
+          "name": "chapterId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content": {
+          "name": "content",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "videoId": {
+          "name": "videoId",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.courseList": {
+      "name": "courseList",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "courseId": {
+          "name": "courseId",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "level": {
+          "name": "level",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "courseOutput": {
+          "name": "courseOutput",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "isVideo": {
+          "name": "isVideo",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Yes'"
+        },
+        "username": {
+          "name": "username",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "userprofileimage": {
+          "name": "userprofileimage",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdBy": {
+          "name": "createdBy",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "courseBanner": {
+          "name": "courseBanner",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "isPublished": {
+          "name": "isPublished",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

@@ -1,3 +1,4 @@
+// app/create-course/page.tsx
 "use client";
 
 import React, { useContext, useEffect, useState } from "react";
@@ -17,7 +18,7 @@ import { useRouter } from "next/navigation";
 import { db } from "@/configs/db";
 import { CourseList } from "@/schema/schema";
 import { eq } from "drizzle-orm";
-import { CourseType } from "@/types/types";
+import { CourseType, UserInputType } from "@/types/types";
 import { UserCourseListContext } from "../_context/UserCourseList.context";
 import { getTopicImage } from "@/configs/service";
 
@@ -30,6 +31,9 @@ const CreateCoursePage = () => {
   );
   const { user } = useUser();
   const router = useRouter();
+  const [progressMessage, setProgressMessage] = useState<string>(
+    "Processing your request..."
+  );
 
   const getUserCourses = async () => {
     if (!user?.primaryEmailAddress?.emailAddress) return;
@@ -60,45 +64,95 @@ const CreateCoursePage = () => {
   };
 
   const generateCourse = async () => {
-    if (!userInput || !user) {
-      console.error(
-        "User input or user data is missing for course generation."
-      );
+    if (!user) {
       setLoading(false);
+      setProgressMessage("User not signed in. Please sign in and try again.");
+      alert("User not signed in. Please sign in and try again.");
       return;
     }
-    const BASIC_PROMPT = `Generate a course tutorial on following details with field name, description, along with the chapter name about and duration: Category '${userInput?.category}' Topic '${userInput?.topic}' Description '${userInput.description}' Level '${userInput?.difficulty}' Duration '${userInput?.duration}' chapters '${userInput?.totalChapters}' in JSON format.\n`;
+    if (!userInput) {
+      setLoading(false);
+      setProgressMessage(
+        "Essential course information context is missing. Please try starting over."
+      );
+      alert(
+        "Essential course information context is missing. Please try starting over."
+      );
+      return;
+    }
+
+    if (
+      !userInput.topic ||
+      userInput.topic.trim() === "" ||
+      !userInput.category ||
+      userInput.category.trim() === "" ||
+      !userInput.difficulty ||
+      userInput.difficulty.trim() === "" ||
+      !userInput.description ||
+      userInput.description.trim() === "" ||
+      !userInput.duration ||
+      userInput.duration.trim() === "" ||
+      !(userInput.totalChapters && userInput.totalChapters > 0) ||
+      !userInput.video ||
+      userInput.video.trim() === ""
+    ) {
+      setLoading(false);
+      setProgressMessage(
+        "Error: Missing essential course information. Please fill all fields from all steps and try again."
+      );
+      alert(
+        "Error: Missing essential course information. Please ensure all fields in all steps are correctly filled and try again."
+      );
+      return;
+    }
+
+    const BASIC_PROMPT = `Generate a course tutorial on following details with field name, description, along with the chapter name about and duration: Category '${userInput.category}' Topic '${userInput.topic}' Description '${userInput.description}' Level '${userInput.difficulty}' Duration '${userInput.duration}' chapters '${userInput.totalChapters}' in JSON format.\n`;
     setLoading(true);
+    setProgressMessage("Generating course outline with AI...");
+
     try {
       const course_uuid = uuid4();
-      const result = await generateCourseLayout.sendMessage(BASIC_PROMPT);
-      const data = JSON.parse(result.response.text());
+      const aiResult = await generateCourseLayout.sendMessage(BASIC_PROMPT);
+      const aiResponseText = aiResult.response.text();
+      const aiLayoutJson = JSON.parse(aiResponseText);
 
-      await storeDataInDatabase(course_uuid, userInput, data, user);
+      setProgressMessage("Saving course outline...");
+      await storeDataInDatabase(course_uuid, userInput, aiLayoutJson, user);
 
+      setProgressMessage("Fetching course banner...");
       let bannerUrl = null;
-      if (userInput?.topic) {
+      if (userInput.topic) {
         bannerUrl = await getTopicImage(userInput.topic);
       }
 
       if (bannerUrl) {
-        const updateResult = await db
+        setProgressMessage("Updating course banner...");
+        await db
           .update(CourseList)
           .set({ courseBanner: bannerUrl })
-          .where(eq(CourseList.courseId, course_uuid))
-          .returning({ updatedId: CourseList.id });
-
-        if (updateResult.length === 0) {
-          console.warn(
-            "Failed to update course banner after creation for courseId:",
-            course_uuid
-          );
-        }
+          .where(eq(CourseList.courseId, course_uuid));
       }
 
+      setProgressMessage("Course outline created successfully!");
+      setUserInput({});
       router.replace(`/create-course/${course_uuid}`);
     } catch (error) {
-      console.error("Error during course generation process:", error);
+      let userFriendlyError =
+        "An unknown error occurred during course generation.";
+      if (error instanceof Error) {
+        if (
+          error.message.toLowerCase().includes("violates not-null constraint")
+        ) {
+          userFriendlyError = `Error: Could not save course. A required data field was missing. Please review your inputs. Details: ${error.message}`;
+        } else if (error.message.toLowerCase().includes("cannot be empty")) {
+          userFriendlyError = `Error: ${error.message}. Please ensure all required fields are correctly filled.`;
+        } else {
+          userFriendlyError = `Error: ${error.message}. Please try again or contact support if it persists.`;
+        }
+      }
+      console.error("Error in generateCourse:", error); // Keep this specific error log for server/dev console
+      setProgressMessage(userFriendlyError);
+      alert(userFriendlyError);
     } finally {
       setLoading(false);
     }
@@ -113,9 +167,11 @@ const CreateCoursePage = () => {
 
   useEffect(() => {
     const freeCourseLimit = 5;
+    // TODO: This limit should ideally be fetched from the user's current subscription plan
     if (userCourseList.length > 0 && userCourseList.length >= freeCourseLimit) {
       router.replace("/dashboard/upgrade");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userCourseList, router]);
 
   return (
@@ -171,7 +227,7 @@ const CreateCoursePage = () => {
               onClick={generateCourse}
               className="gap-2 px-6 py-3 text-base bg-primary hover:bg-purple-700 text-white"
             >
-              <FaWandMagicSparkles className="mr-2" /> Generate Course
+              <FaWandMagicSparkles className="mr-2" /> Create Course Outline
             </Button>
           ) : (
             <Button
@@ -184,7 +240,7 @@ const CreateCoursePage = () => {
           )}
         </div>
       </div>
-      <LoadingDialog loading={loading} />
+      <LoadingDialog loading={loading} message={progressMessage} />
     </div>
   );
 };

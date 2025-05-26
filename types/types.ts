@@ -16,11 +16,11 @@ export type ChapterType = {
 
 export type courseOutputType = {
   category: string;
-  chapters: ChapterType[];
-  duration: string;
-  level: string;
   topic: string;
   description: string;
+  level: string;
+  duration: string;
+  chapters: ChapterType[];
 };
 
 export type CourseType = {
@@ -36,10 +36,12 @@ export type CourseType = {
   createdBy: string | null;
   courseBanner: string | null;
   isPublished: boolean;
+  createdAt?: Date | string | null;
+  updatedAt?: Date | string | null;
 };
 
 export type CodeExampleType = {
-  code: string[];
+  code: string | string[];
 };
 
 export type ChapterSectionType = {
@@ -54,4 +56,50 @@ export type ChapterContentType = {
   courseId: string;
   content: ChapterSectionType[];
   videoId: string;
+};
+
+export type QuizQuestionOptionType = {
+  id: string;
+  text: string;
+};
+
+export type QuizQuestionType = {
+  id?: number;
+  courseId?: string;
+  chapterId?: number;
+  questionText: string;
+  options: QuizQuestionOptionType[];
+  correctOptionId: string;
+  aiGenerated?: boolean;
+  explanation_for_correct_answer?: string;
+};
+
+export type UserQuizAttemptType = {
+  id?: number;
+  userId: string;
+  courseId: string;
+  score: number;
+  totalQuestions: number;
+  attemptedAt?: Date | string;
+};
+
+export type AIChatSessionType = {
+  id?: number;
+  userId: string;
+  sessionName: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+};
+
+export type AIChatMessageType = {
+  id?: number;
+  sessionId: number;
+  role: "user" | "model";
+  content: string;
+  timestamp?: Date | string;
+};
+
+export type PlanDetailsType = {
+  courses: number;
+  name: string;
 };

@@ -61,7 +61,7 @@ const CourseCard = ({
           {" "}
           <Image
             src={course?.courseBanner ?? "/thumbnail.png"}
-            alt={course?.courseName ?? "TutHub Course"}
+            alt={course?.courseName ?? "TutorialHub Course"}
             fill
             style={{ objectFit: "cover" }}
             priority={false}
@@ -104,7 +104,7 @@ const CourseCard = ({
           <div className="flex items-center gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
             <Image
               src={course?.userprofileimage || "/userProfile.png"}
-              alt={course?.username || "TutHub User"}
+              alt={course?.username || "TutorialHub User"}
               width={28}
               height={28}
               className="rounded-full"

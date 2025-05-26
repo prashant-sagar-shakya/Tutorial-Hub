@@ -24,14 +24,16 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    const simpleReceiptId = `tut_${nanoid(12)}`;
 
     const options = {
       amount: amount_in_paisa,
       currency: currency,
-      receipt: `receipt_tut_${plan_id}_${user_id}_${nanoid(8)}`,
+      receipt: simpleReceiptId,
       notes: {
         planId: plan_id,
         userId: user_id,
+        originalReceiptInfo: `plan:${plan_id},user:${user_id}`,
       },
     };
 
@@ -47,11 +49,34 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(order, { status: 200 });
   } catch (error) {
     console.error("Error creating Razorpay order:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Internal Server Error";
+    let errorMessage = "Internal Server Error";
+    let statusCode = 500;
+
+    if (
+      error &&
+      typeof error === "object" &&
+      "statusCode" in error &&
+      "error" in error
+    ) {
+      const rzpError = error as any;
+      if (
+        rzpError.error &&
+        typeof rzpError.error === "object" &&
+        "description" in rzpError.error
+      ) {
+        errorMessage = rzpError.error.description;
+      } else {
+        errorMessage = "Razorpay operation failed";
+      }
+      statusCode = rzpError.statusCode || 500;
+      console.error("Razorpay Error Details:", rzpError.error);
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+
     return NextResponse.json(
       { error: "Failed to create order", details: errorMessage },
-      { status: 500 }
+      { status: statusCode }
     );
   }
 }

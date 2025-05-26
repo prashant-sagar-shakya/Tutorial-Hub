@@ -28,7 +28,7 @@ const UserToolTip = ({
         <TooltipContent variant={"secondary"}>
           <Image
             src={userProfileImage || "/userProfile.png"}
-            alt={username || "AI Course Generator"}
+            alt={username || "TutorialHub"}
             width={50}
             height={50}
             priority

@@ -7,49 +7,74 @@ import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { UserCourseListContext } from "@/app/_context/UserCourseList.context";
 import WordRotate from "@/components/ui/word-rotate";
+import { Button } from "@/components/ui/button";
+import { MessageSquareHeart } from "lucide-react";
 
-const Sidebar = () => {
+interface SidebarProps {
+  // Add props interface
+  onToggleChatPanel: () => void;
+}
+
+const DashboardSidebar = ({ onToggleChatPanel }: SidebarProps) => {
+  // Use props
   const path = usePathname();
   const { userCourseList } = useContext(UserCourseListContext);
-  // console.log("User Context Courses", userCourseList);
+  const courseLimit = 5;
+
   return (
-    <div className="fixed h-full md:w-64 p-5 shadow-md">
-      <WordRotate
-        className="text-4xl font-bold text-black dark:text-white text-center"
-        words={["AI", "Course", "Generator"]}
-      />
-      <hr className="my-5" />
+    <div className="flex flex-col h-full p-4 md:p-5 border-r dark:border-gray-700">
+      <div className="mb-8 text-center">
+        <WordRotate
+          className="text-3xl font-bold text-gray-800 dark:text-white"
+          words={["Tutorial", "Hub"]}
+          duration={2500}
+        />
+      </div>
 
-      <ul>
-        {navList.map((item) => (
-          <Link href={item.route} key={item.id}>
-            <div
-              className={`flex items-center gap-2 text-gray-600 p-3 cursor-pointer hover:bg-gray-100 hover:text-black rounded-lg mb-3 ${
-                item.route === path && "bg-gray-100 text-black"
-              }`}
-            >
-              <div className="text-2xl">
-                <item.icon />
-              </div>
-              <h2>{item.name}</h2>
-            </div>
-          </Link>
-        ))}
-      </ul>
+      <Button
+        variant="outline"
+        className="w-full mb-6 py-3 border-primary text-primary hover:bg-primary hover:text-white dark:border-primary-foreground dark:hover:bg-primary-foreground dark:text-primary transition-all duration-200 font-semibold text-md"
+        onClick={onToggleChatPanel}
+      >
+        <MessageSquareHeart className="mr-2 h-5 w-5" />
+        Ask TutorialHub AI
+      </Button>
 
-      <div className="absolute bottom-10 w-[80%]">
-        <Progress value={(userCourseList.length / 5) * 100} />
-        <h2 className="text-sm my-2">
-          {userCourseList.length} out of 5 Courses created
-        </h2>
-        <Link href="/dashboard/upgrade">
-          <h2 className="text-xs text-gray-500">
-            Upgrade your Plan for Unlimited
-          </h2>
+      <nav className="flex-grow">
+        <ul className="space-y-1.5">
+          {navList.map((item) => (
+            <li key={item.id}>
+              <Link href={item.route}>
+                <Button
+                  variant={item.route === path ? "secondary" : "ghost"}
+                  className="w-full justify-start py-3 h-auto text-md"
+                >
+                  <item.icon className="mr-3 h-5 w-5" />
+                  {item.name}
+                </Button>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <div className="mt-auto pt-6 border-t dark:border-gray-700">
+        <Progress
+          value={(userCourseList.length / courseLimit) * 100}
+          className="h-2.5 [&>div]:bg-gradient-to-r [&>div]:from-purple-500 [&>div]:to-pink-500"
+        />
+        <p className="text-sm my-2 text-gray-600 dark:text-gray-300">
+          {userCourseList.length} of {courseLimit} Courses Created
+        </p>
+        <Link
+          href="/dashboard/upgrade"
+          className="text-xs text-primary dark:text-purple-400 hover:underline"
+        >
+          Upgrade for More
         </Link>
       </div>
     </div>
   );
 };
 
-export default Sidebar;
+export default DashboardSidebar;

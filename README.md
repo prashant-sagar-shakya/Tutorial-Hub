@@ -1,6 +1,6 @@
-# AI Course Generator
+# TutorialHub
 
-AI Course Generator is a platform that allows users to easily create
+TutorialHub is a platform that allows users to easily create
 and generate educational courses using artificial intelligence. By simply entering course details like name, duration, number of chapters, and specifying if videos are included, Gemeni AI generates the entire course structure along with relevant YouTube videos for each chapter.
 
 ## Features
@@ -66,7 +66,7 @@ and generate educational courses using artificial intelligence. By simply enteri
 
 ## Open to Contributions
 
-AI Course Generator is an open-source project and we welcome contributions from the community. If you would like to contribute to the project, please follow the steps below:
+TutorialHub is an open-source project and we welcome contributions from the community. If you would like to contribute to the project, please follow the steps below:
 
 1. Fork the repository.
 

@@ -13,16 +13,19 @@ const Header = () => {
 
   return (
     <header className="flex justify-between items-center p-4 md:px-6 shadow-sm bg-white dark:bg-gray-900 sticky top-0 z-50 border-b dark:border-gray-700">
-      <Link href="/" aria-label="TutHub Home">
-        <Image
-          src={"/logo.png"}
-          alt="TutHub logo"
-          width={130} // Adjusted size
-          height={35} // Adjusted size
-          priority
-          className="object-contain"
-        />
-      </Link>
+      <span className="flex text-3xl font-extrabold items-center text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1">
+        <Link href="/dashboard" aria-label="TutorialHub Dashboard">
+          <Image
+            src={"/logo.png"}
+            alt="TutorialHub logo"
+            width={70}
+            height={10}
+            priority
+            className="object-contain"
+          />
+        </Link>
+        TutorialHub
+      </span>
       <div className="flex items-center gap-3 md:gap-4">
         <ThemeToggle />
         {/* Clerk loaded check to avoid flicker or errors before Clerk state is known */}

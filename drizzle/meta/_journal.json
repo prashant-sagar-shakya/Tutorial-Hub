@@ -15,6 +15,83 @@
       "when": 1748172737598,
       "tag": "0001_chilly_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1748204749011,
+      "tag": "0002_massive_silverclaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1748205864300,
+      "tag": "0003_third_blue_blade",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1748206096931,
+      "tag": "0004_rich_piledriver",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1748206177826,
+      "tag": "0005_motionless_rockslide",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1748206286262,
+      "tag": "0006_boring_tinkerer",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1748206371744,
+      "tag": "0007_unknown_jack_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1748206675906,
+      "tag": "0008_elite_electro",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1748207148269,
+      "tag": "0009_wet_dazzler",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1748207192961,
+      "tag": "0010_complete_nitro",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1748207538469,
+      "tag": "0011_majestic_serpent_society",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1748208602846,
+      "tag": "0012_silent_dracula",
+      "breakpoints": true
     }
   ]
 }

@@ -8,9 +8,9 @@ import { ThemeProvider } from "./_components/providers/ThemeProvider";
 const outfitFont = Outfit({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TutHub - AI Course Generator",
+  title: "TutorialHub - TutorialHub",
   description:
-    "TutHub is an AI-powered platform that allows users to easily create and generate educational courses. By simply entering course details, AI generates the entire course structure along with relevant YouTube videos and images for each chapter.",
+    "TutorialHub is an AI-powered platform that allows users to easily create and generate educational courses. By simply entering course details, AI generates the entire course structure along with relevant YouTube videos and images for each chapter.",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#111827" },

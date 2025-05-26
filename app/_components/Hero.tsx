@@ -13,10 +13,10 @@ const Hero = () => {
     <section className="py-20 md:py-32">
       <div className="mx-auto max-w-screen-xl px-4 py-32 lg:flex lg:items-center">
         <div className="mx-auto max-w-xl text-center">
-          <GradientTextAnimation title="Introducting AI Course Generator" />
+          <GradientTextAnimation title="Introducting TutorialHub" />
           <WordPullUp
             className="text-4xl font-bold tracking-[-0.02em] text-black md:text-7xl md:leading-[5rem] dark:text-white"
-            words="AI Course Generator"
+            words="Tutorial Hub"
           />
 
           <p className="mt-10 sm:text-xl/relaxed">

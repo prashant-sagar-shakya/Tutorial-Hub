@@ -11,8 +11,7 @@
 
 **TutHub** is an innovative platform that leverages the power of Artificial Intelligence, specifically Google's Gemini models, to help users effortlessly generate comprehensive educational courses. Simply provide a topic, and TutHub's AI will craft a structured course outline, detailed chapter content, relevant YouTube video integrations, and even quiz questions!
 
-**(Optional: Add a GIF or Screenshot of the app here)**
-<!-- ![TutHub Demo GIF](link_to_your_gif.gif) -->
+![TutHub Demo](demo.png)
 
 ---
 

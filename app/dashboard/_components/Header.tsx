@@ -12,17 +12,17 @@ const Header = () => {
 
   return (
     <header className="flex justify-between items-center p-4 md:px-6 shadow-sm bg-white dark:bg-gray-800 sticky top-0 z-40 border-b dark:border-gray-700">
-      <span className="flex text-3xl font-extrabold items-center text-gray-800 dark:text-gray-100 px-2 py-1"><Link href="/dashboard" aria-label="Dashboard">
+      <span className="flex text-3xl font-extrabold items-center text-gray-800 dark:text-gray-100 px-2 py-1"><Link href="/dashboard" aria-label="Dashboard" className="flex">
         <Image
           src={"/logo.png"}
           alt="TutorialHub logo"
-          width={70}
+          width={60}
           height={10}
           priority
           className="object-contain"
         />
-      </Link>
           TutorialHub
+      </Link>
         </span>
       <div className="flex items-center gap-3 md:gap-4">
         <ThemeToggle />

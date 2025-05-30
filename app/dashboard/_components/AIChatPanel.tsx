@@ -20,7 +20,7 @@ import {
 } from "@radix-ui/react-icons";
 import { AIChatMessageType, AIChatSessionType } from "@/types/types";
 import { AnimatePresence, motion } from "framer-motion";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { Components } from "react-markdown"; // Import Components type
 import { useUser } from "@clerk/nextjs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquareHeart } from "lucide-react";
@@ -28,6 +28,16 @@ import { MessageSquareHeart } from "lucide-react";
 interface AIChatPanelProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+// Define a type for the props that our custom 'code' component will receive
+// This explicitly includes 'inline' which react-markdown passes.
+interface CustomCodeProps {
+  node?: any; // node can be complex, using any for simplicity or more specific types from 'unist'
+  inline?: boolean;
+  className?: string;
+  children?: React.ReactNode;
+  [key: string]: any; // Allow other props that might be passed
 }
 
 const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
@@ -65,8 +75,8 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
     })}`;
     setMessages([]);
     setCurrentMessage("");
-    // setActiveSessionId(null); // Set to null while new one is created
-    // setIsLoadingMessages(true); // Show loading for messages area for new chat
+    setActiveSessionId(null);
+    setIsLoadingMessages(true);
 
     try {
       const response = await fetch("/api/ai-chat/sessions", {
@@ -85,12 +95,11 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
         newSession,
         ...prev.filter((s) => s.id && s.id !== newSession.id),
       ]);
-      setActiveSessionId(newSession.id!); // Directly set as active
+      setActiveSessionId(newSession.id!);
       inputRef.current?.focus();
       return newSession.id!;
     } catch (error) {
       console.error("Error creating and activating new chat session:", error);
-      // If creation fails, try to set to an existing session if any, or null
       if (sessions.length > 0 && sessions[0].id) {
         setActiveSessionId(sessions[0].id);
       } else {
@@ -98,15 +107,14 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
       }
       return null;
     } finally {
-      // setIsLoadingMessages(false);
+      setIsLoadingMessages(false);
     }
-  }, [user?.id, sessions]); // sessions dependency for fallback
+  }, [user?.id, sessions]);
 
-  // Effect 1: Fetch sessions when panel opens and user is loaded
   useEffect(() => {
     if (isOpen && clerkIsLoaded && user?.id && !initialSessionLoadAttempted) {
       setIsLoadingSessions(true);
-      setInitialSessionLoadAttempted(true); // Mark that an attempt has been made
+      setInitialSessionLoadAttempted(true);
       fetch(`/api/ai-chat/sessions?userId=${user.id}`)
         .then((res) => {
           if (!res.ok) throw new Error("Failed to fetch sessions");
@@ -115,7 +123,6 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
         .then((data: AIChatSessionType[]) => {
           setSessions(data);
           if (data.length > 0) {
-            // Only set active session if it's not already set or if the current one isn't in the list
             if (
               !activeSessionId ||
               !data.some((s) => s.id === activeSessionId)
@@ -123,22 +130,18 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
               setActiveSessionId(data[0].id!);
             }
           } else {
-            // No sessions found, create one.
             createAndActivateNewSession();
           }
         })
         .catch((error) => {
           console.error("Error fetching initial sessions:", error);
-          // If fetching fails, still try to create a new one
           createAndActivateNewSession();
         })
         .finally(() => {
           setIsLoadingSessions(false);
         });
     } else if (!isOpen) {
-      setInitialSessionLoadAttempted(false); // Reset when panel closes
-      // setActiveSessionId(null); // Optionally clear active session when panel closes
-      // setMessages([]);
+      setInitialSessionLoadAttempted(false);
     }
   }, [
     isOpen,
@@ -149,11 +152,10 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
     initialSessionLoadAttempted,
   ]);
 
-  // Effect 2: Fetch messages when activeSessionId changes (and is valid)
   useEffect(() => {
     if (activeSessionId && isOpen) {
       setIsLoadingMessages(true);
-      setMessages([]); // Clear previous messages immediately
+      setMessages([]);
       fetch(`/api/ai-chat/sessions/${activeSessionId}/messages`)
         .then((res) => {
           if (!res.ok)
@@ -170,14 +172,12 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
             `Error fetching messages for session ${activeSessionId}:`,
             error
           );
-          setMessages([]); // Clear messages on error
+          setMessages([]);
         })
         .finally(() => {
           setIsLoadingMessages(false);
         });
     } else if (!activeSessionId && isOpen) {
-      // This case might happen if a session was deleted and no new one was set.
-      // The initial session fetch/create logic in Effect 1 should handle most cases.
       setMessages([]);
     }
   }, [activeSessionId, isOpen]);
@@ -248,11 +248,63 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
     }
   };
 
+  const markdownComponents: Components = {
+    p: ({ node, ...props }) => <p className="mb-1 last:mb-0" {...props} />,
+    pre: ({ node, ...props }) => (
+      <div className="my-1.5">
+        <pre
+          className="bg-gray-800 dark:bg-black/60 p-2.5 rounded-md overflow-x-auto text-xs text-gray-100 whitespace-pre-wrap break-all"
+          {...props}
+        />
+      </div>
+    ),
+    code: ({ node, className, children, ...props }: CustomCodeProps) => {
+      const isInline = props.inline;
+      const match = /language-(\w+)/.exec(className || "");
+      return !isInline && match ? (
+        <code
+          className={`language-${match[1]} text-xs font-mono block`}
+          {...props}
+        >
+          {String(children).replace(/\n$/, "")}
+        </code>
+      ) : (
+        <code
+          className={`text-xs font-mono ${
+            isInline
+              ? "px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-purple-700 dark:text-purple-300"
+              : "whitespace-pre-wrap break-all"
+          }`}
+          {...props}
+        >
+          {String(children).replace(/\n$/, "")}
+        </code>
+      );
+    },
+    ul: ({ node, ...props }) => (
+      <ul className="list-disc list-inside my-1 space-y-0.5 pl-2" {...props} />
+    ),
+    ol: ({ node, ...props }) => (
+      <ol
+        className="list-decimal list-inside my-1 space-y-0.5 pl-2"
+        {...props}
+      />
+    ),
+    li: ({ node, ...props }) => <li className="my-0.5" {...props} />,
+    a: ({ node, ...props }) => (
+      <a
+        className="text-blue-500 hover:underline"
+        target="_blank"
+        rel="noopener noreferrer"
+        {...props}
+      />
+    ),
+  };
+
   if (!isOpen) {
     return null;
   }
 
-  // Early return for Clerk loading or no user
   if (!clerkIsLoaded) {
     return (
       <motion.div
@@ -335,7 +387,7 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
             const newSessionId = Number(e.target.value);
             if (newSessionId && newSessionId !== activeSessionId) {
               setActiveSessionId(newSessionId);
-              setMessages([]); // Clear messages when switching sessions
+              setMessages([]);
             }
           }}
           className="w-full p-2 text-sm border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-primary focus:border-primary disabled:opacity-50"
@@ -420,55 +472,8 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
                     }`}
                   >
                     <ReactMarkdown
+                      components={markdownComponents}
                       className="prose prose-sm dark:prose-invert max-w-none leading-normal"
-                      components={{
-                        p: ({ node, ...props }) => (
-                          <p className="mb-1 last:mb-0" {...props} />
-                        ),
-                        pre: ({ node, ...props }) => (
-                          <div className="my-1.5">
-                            <pre
-                              className="bg-gray-800 dark:bg-black/60 p-2.5 rounded-md overflow-x-auto text-xs text-gray-100 whitespace-pre-wrap break-all"
-                              {...props}
-                            />
-                          </div>
-                        ),
-                        code: ({
-                          node,
-                          inline,
-                          className,
-                          children,
-                          ...props
-                        }) => {
-                          return (
-                            <code
-                              className={`text-xs font-mono ${
-                                inline
-                                  ? "px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-purple-700 dark:text-purple-300"
-                                  : "whitespace-pre-wrap break-all"
-                              }`}
-                              {...props}
-                            >
-                              {String(children).replace(/\n$/, "")}
-                            </code>
-                          );
-                        },
-                        ul: ({ node, ...props }) => (
-                          <ul
-                            className="list-disc list-inside my-1 space-y-0.5 pl-2"
-                            {...props}
-                          />
-                        ),
-                        ol: ({ node, ...props }) => (
-                          <ol
-                            className="list-decimal list-inside my-1 space-y-0.5 pl-2"
-                            {...props}
-                          />
-                        ),
-                        li: ({ node, ...props }) => (
-                          <li className="my-0.5" {...props} />
-                        ),
-                      }}
                     >
                       {msg.content}
                     </ReactMarkdown>
@@ -517,7 +522,9 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
             value={currentMessage}
             onChange={(e) => setCurrentMessage(e.target.value)}
             placeholder={
-              !clerkIsLoaded || isLoadingSessions || !activeSessionId
+              !clerkIsLoaded ||
+              isLoadingSessions ||
+              (!activeSessionId && sessions.length === 0)
                 ? "Initializing chat..."
                 : isLoadingReply
                 ? "TutorialHub AI is typing..."

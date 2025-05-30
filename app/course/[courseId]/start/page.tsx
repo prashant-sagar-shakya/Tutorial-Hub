@@ -1,3 +1,4 @@
+// app/course/[courseId]/start/page.tsx
 "use client";
 
 import { db } from "@/configs/db";
@@ -19,12 +20,14 @@ import Quiz from "./_components/Quiz";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 type CourseStartProps = {
   params: { courseId: string };
 };
 
 const CourseStartPage = ({ params }: CourseStartProps) => {
+  const router = useRouter();
   const [course, setCourse] = useState<CourseType | null>(null);
   const [selectedChapterOutline, setSelectedChapterOutline] =
     useState<CourseOutlineChapterType | null>(null);
@@ -46,22 +49,32 @@ const CourseStartPage = ({ params }: CourseStartProps) => {
     setIsLoadingCourse(true);
     setContentError(null);
     try {
-      const result = await db
+      const results = await db
         .select()
         .from(CourseList)
         .where(eq(CourseList.courseId, params.courseId))
         .limit(1);
 
-      if (result.length > 0) {
-        setCourse(result[0] as CourseType);
-        // If no chapter is auto-selected, select the first one by default if course is published
+      if (results.length > 0) {
+        const fetchedCourseFromDb = results[0];
+        const typedCourse = fetchedCourseFromDb as CourseType;
+        setCourse(typedCourse);
+
         if (
-          !selectedChapterOutline &&
-          result[0].isPublished &&
-          result[0].courseOutput.chapters.length > 0
+          selectedChapterOutline === null &&
+          typedCourse.isPublished &&
+          typedCourse.courseOutput &&
+          Array.isArray(typedCourse.courseOutput.chapters) &&
+          typedCourse.courseOutput.chapters.length > 0
         ) {
-          setSelectedChapterOutline(result[0].courseOutput.chapters[0]);
-          setSelectedChapterSequenceId(0); // Auto-select first chapter (index 0)
+          setSelectedChapterOutline(typedCourse.courseOutput.chapters[0]);
+          setSelectedChapterSequenceId(0);
+        } else if (!typedCourse.isPublished) {
+          setContentError(
+            "This course content is not yet published or fully generated."
+          );
+          setSelectedChapterOutline(null);
+          setSelectedChapterSequenceId(null);
         }
       } else {
         setContentError(
@@ -69,12 +82,12 @@ const CourseStartPage = ({ params }: CourseStartProps) => {
         );
       }
     } catch (e) {
-      console.error("Error fetching course details:", e);
+      console.error("[CourseStartPage] Error fetching course details:", e);
       setContentError("Failed to load course details. Please try again later.");
     } finally {
       setIsLoadingCourse(false);
     }
-  }, [params.courseId, selectedChapterOutline]); // Added selectedChapterOutline to dependencies
+  }, [params.courseId, selectedChapterOutline]);
 
   useEffect(() => {
     if (params.courseId) {
@@ -106,9 +119,8 @@ const CourseStartPage = ({ params }: CourseStartProps) => {
           setChapterGeneratedContent(contentRes[0] as ChapterContentType);
         } else {
           console.warn(
-            `No generated content found for course ${course.courseId}, chapter sequence ${chapterSeqId}`
+            `[CourseStartPage] No generated content found for course ${course.courseId}, chapter sequence ${chapterSeqId}`
           );
-          // No contentError set here as quiz might still exist or this is intended.
         }
 
         const quizRes = await db
@@ -123,13 +135,19 @@ const CourseStartPage = ({ params }: CourseStartProps) => {
 
         setChapterQuizQuestions(quizRes as QuizQuestionType[]);
         if (quizRes.length === 0 && contentRes.length > 0) {
-          // Content exists but no quiz
           console.warn(
-            `No quiz questions found for course ${course.courseId}, chapter sequence ${chapterSeqId}`
+            `[CourseStartPage] No quiz questions found for course ${course.courseId}, chapter sequence ${chapterSeqId}`
+          );
+        } else if (quizRes.length === 0 && contentRes.length === 0) {
+          console.warn(
+            `[CourseStartPage] No content or quiz for course ${course.courseId}, chapter sequence ${chapterSeqId}`
           );
         }
       } catch (error) {
-        console.error("Error fetching chapter content or quiz:", error);
+        console.error(
+          "[CourseStartPage] Error fetching chapter content or quiz:",
+          error
+        );
         setContentError(
           "Failed to load chapter materials. Please try refreshing."
         );
@@ -141,19 +159,10 @@ const CourseStartPage = ({ params }: CourseStartProps) => {
   );
 
   useEffect(() => {
-    if (
-      selectedChapterOutline &&
-      selectedChapterSequenceId !== null &&
-      course
-    ) {
+    if (selectedChapterSequenceId !== null && course) {
       fetchChapterDataAndQuiz(selectedChapterSequenceId);
     }
-  }, [
-    selectedChapterSequenceId,
-    course,
-    selectedChapterOutline,
-    fetchChapterDataAndQuiz,
-  ]);
+  }, [selectedChapterSequenceId, course, fetchChapterDataAndQuiz]);
 
   if (isLoadingCourse) {
     return (
@@ -192,10 +201,12 @@ const CourseStartPage = ({ params }: CourseStartProps) => {
   }
 
   if (!course) {
-    // Should be caught by contentError usually, but as a fallback
     return (
       <div className="flex items-center justify-center h-screen">
-        <p>Course could not be loaded.</p>
+        <p>
+          Course data could not be loaded. It might not exist or you may not
+          have access.
+        </p>
       </div>
     );
   }
@@ -204,8 +215,10 @@ const CourseStartPage = ({ params }: CourseStartProps) => {
     chapterOutlineItem: CourseOutlineChapterType,
     chapterIndex: number
   ) => {
-    setSelectedChapterOutline(chapterOutlineItem);
-    setSelectedChapterSequenceId(chapterIndex);
+    if (selectedChapterSequenceId !== chapterIndex) {
+      setSelectedChapterOutline(chapterOutlineItem);
+      setSelectedChapterSequenceId(chapterIndex);
+    }
   };
 
   return (
@@ -242,8 +255,6 @@ const CourseStartPage = ({ params }: CourseStartProps) => {
       </div>
 
       <div className="flex-1 md:ml-72 mt-16 md:mt-0">
-        {" "}
-        {/* mt-16 on mobile if sidebar becomes fixed/overlay */}
         {isLoadingContentAndQuiz ? (
           <div className="p-6 md:p-10 flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] md:min-h-screen space-y-4">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -270,13 +281,30 @@ const CourseStartPage = ({ params }: CourseStartProps) => {
                 }}
               />
             ) : (
-              <p className="text-center text-gray-500 dark:text-gray-400 py-10">
-                This chapter's knowledge check is being prepared. Please check
-                back soon!
-              </p>
+              <div className="text-center text-gray-500 dark:text-gray-400 py-10 my-8 border-t dark:border-gray-700">
+                <p className="font-medium">Knowledge Check</p>
+                <p className="text-sm">
+                  The quiz for this chapter is currently under preparation.
+                  Please check back soon!
+                </p>
+              </div>
             )}
           </div>
-        ) : !selectedChapterOutline && course.isPublished ? ( // No chapter selected but course is published
+        ) : selectedChapterOutline &&
+          !chapterGeneratedContent &&
+          !isLoadingContentAndQuiz ? (
+          <div className="p-6 md:p-10 flex justify-center flex-col items-center text-center min-h-[calc(100vh-4rem)] md:min-h-screen">
+            <AlertTriangle className="w-12 h-12 text-orange-400 mb-4" />
+            <h2 className="text-xl font-semibold text-orange-500 dark:text-orange-300 mb-2">
+              Chapter Content Not Found
+            </h2>
+            <p className="text-gray-700 dark:text-gray-300 max-w-md">
+              The content for the chapter "{selectedChapterOutline.chapter_name}
+              " could not be loaded. It might still be under generation or there
+              was an issue. Please try another chapter or refresh.
+            </p>
+          </div>
+        ) : !selectedChapterOutline && course.isPublished ? (
           <div className="p-6 md:p-10 flex justify-center flex-col items-center text-center min-h-[calc(100vh-4rem)] md:min-h-screen">
             <Image
               src={course.courseBanner || "/thumbnail.png"}
@@ -290,9 +318,8 @@ const CourseStartPage = ({ params }: CourseStartProps) => {
               Welcome to {course.courseOutput.topic}!
             </h1>
             <p className="text-gray-600 dark:text-gray-300 mb-8 max-w-xl mx-auto">
-              {!course.isPublished
-                ? "This course content is currently being generated. Please wait or try refreshing."
-                : "Select a chapter from the sidebar to begin your learning journey. Enjoy the course!"}
+              Select a chapter from the sidebar to begin your learning journey.
+              Enjoy the course!
             </p>
             <UserToolTip
               username={course.username || "TutorialHub AI"}
@@ -300,16 +327,15 @@ const CourseStartPage = ({ params }: CourseStartProps) => {
             />
           </div>
         ) : (
-          // Fallback / Chapter content might be missing
           <div className="p-6 md:p-10 flex justify-center flex-col items-center text-center min-h-[calc(100vh-4rem)] md:min-h-screen">
             <AlertTriangle className="w-12 h-12 text-yellow-500 mb-4" />
             <h2 className="text-xl font-semibold text-yellow-600 dark:text-yellow-400 mb-2">
-              Content Not Available
+              Ready to Start?
             </h2>
             <p className="text-gray-700 dark:text-gray-300">
-              The content for this chapter might still be under generation or is
-              currently unavailable. Please select another chapter or try again
-              later.
+              {course.isPublished
+                ? "Please select a chapter from the sidebar to view its content."
+                : "This course's content is not yet published or is still under generation. Please check back later or contact the course creator."}
             </p>
           </div>
         )}

@@ -1,5 +1,8 @@
 // app/create-course/[courseId]/_utils/generateCourseContent.ts
-import { generateChapterContentAndQuiz } from "@/configs/ai-models";
+import {
+  startNewChatSession,
+  isAIServiceInitialized,
+} from "@/configs/ai-models";
 import { getYoutubeVideos } from "@/configs/service";
 import { db } from "@/configs/db";
 import { CourseChapters, QuizQuestions } from "@/schema/schema";
@@ -10,24 +13,18 @@ import {
 import { GoogleGenerativeAIError } from "@google/generative-ai";
 import { eq } from "drizzle-orm";
 
-type AIQuestionOption = {
-  id: string;
-  text: string;
-};
-
+type AIQuestionOption = { id: string; text: string };
 type AIQuizQuestion = {
   questionText: string;
   options: AIQuestionOption[];
   correctOptionId: string;
   explanation_for_correct_answer?: string;
 };
-
 type AIChapterSection = {
   title: string;
   explanation: string;
   code_examples?: Array<{ code: string | string[] }>;
 };
-
 type AIChapterResponse = {
   chapterDetails: AIChapterSection[];
   quiz: AIQuizQuestion[];
@@ -39,6 +36,15 @@ export const generateCourseContentAndQuizForChapters = async (
   setProgressMessage?: (message: string) => void
 ) => {
   setLoading(true);
+  if (!isAIServiceInitialized) {
+    const errorMsg =
+      "AI Service is not initialized. Please check API Key and server logs.";
+    console.error(`[ContentGen] ${errorMsg}`);
+    if (setProgressMessage) setProgressMessage(errorMsg);
+    setLoading(false);
+    return;
+  }
+
   if (setProgressMessage)
     setProgressMessage(
       `Preparing to generate content for "${course.courseName}"...`
@@ -70,10 +76,6 @@ export const generateCourseContentAndQuizForChapters = async (
       const chapterOutline: CourseOutlineChapterType =
         courseOutlineChapters[index];
       const currentProgress = `(${index + 1}/${courseOutlineChapters.length})`;
-      if (setProgressMessage)
-        setProgressMessage(
-          `Generating for chapter ${currentProgress}: "${chapterOutline.chapter_name}"...`
-        );
 
       const PROMPT = `
         Based on the course titled "${course.courseName}" (category: ${course.category}, level: ${course.level}),
@@ -105,10 +107,10 @@ export const generateCourseContentAndQuizForChapters = async (
         }
         Ensure all text within explanations and code examples is properly escaped for JSON strings.
         The 'code_examples' field should contain an array of objects, where each object has a 'code' key. The value of 'code' should be a single string, potentially with <precode> tags as shown.
-        The quiz should have between 3 to 5 relevant multiple-choice questions.
+        The quiz should have between 3 to 5 relevant multiple-choice questions. Ensure option IDs are single uppercase letters like A, B, C, D.
       `;
 
-      let videoId = "NOT_FOUND"; // Default videoId
+      let videoId = "NOT_FOUND";
 
       try {
         if (setProgressMessage)
@@ -124,14 +126,14 @@ export const generateCourseContentAndQuizForChapters = async (
             `[ContentGen] No YouTube video found for query: ${youtubeQuery}`
           );
         }
+
         if (setProgressMessage)
           setProgressMessage(
             `AI processing for ${chapterOutline.chapter_name} ${currentProgress}...`
           );
 
-        const aiResult = await generateChapterContentAndQuiz.sendMessage(
-          PROMPT
-        );
+        const chatSessionForChapter = startNewChatSession();
+        const aiResult = await chatSessionForChapter.sendMessage(PROMPT);
 
         if (!aiResult.response) {
           console.error(
@@ -169,7 +171,7 @@ export const generateCourseContentAndQuizForChapters = async (
           );
           if (setProgressMessage)
             setProgressMessage(
-              `Error (JSON parse) for: ${chapterOutline.chapter_name} ${currentProgress}. Check server logs for AI output.`
+              `Error (JSON parse) for: ${chapterOutline.chapter_name} ${currentProgress}. Check server logs.`
             );
           continue;
         }

@@ -519,10 +519,12 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
                         msg.role === "user" ? "right-1" : "left-1"
                       } text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity`}
                     >
-                      {new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {msg.timestamp
+                        ? new Date(msg.timestamp).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : ""}
                     </span>
                   </div>
                 </div>

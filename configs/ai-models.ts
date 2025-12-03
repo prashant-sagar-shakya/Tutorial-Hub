@@ -9,7 +9,7 @@ import {
 import { BaseEnvironment } from "./BaseEnvironment";
 
 const env = new BaseEnvironment();
-export const MODEL_NAME = "gemini-1.5-flash";
+export const MODEL_NAME = "gemini-2.5-flash";
 
 let genAIInstance: GoogleGenerativeAI | null = null;
 let isAIInitialized = false;

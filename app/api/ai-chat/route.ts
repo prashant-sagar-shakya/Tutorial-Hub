@@ -8,7 +8,12 @@ import {
 } from "@google/generative-ai";
 import { BaseEnvironment } from "@/configs/BaseEnvironment";
 import { db } from "@/configs/db";
-import { AIChatSessions, AIChatMessages } from "@/schema/schema";
+import {
+  AIChatSessions,
+  AIChatMessages,
+  CourseList,
+  UserSubscriptions,
+} from "@/schema/schema";
 import { eq, asc } from "drizzle-orm";
 import { AIChatMessageType } from "@/types/types";
 
@@ -97,7 +102,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { message, sessionId, userId } = body;
+    const { message, sessionId, userId, userEmail } = body;
 
     if (!message || !sessionId || !userId) {
       return NextResponse.json(
@@ -120,18 +125,75 @@ export async function POST(request: NextRequest) {
       .set({ updatedAt: new Date() })
       .where(eq(AIChatSessions.id, Number(sessionId)));
 
+    // --- CONTEXT INJECTION START ---
+    let contextString = "";
+    if (userEmail) {
+      try {
+        // 1. Fetch User's Courses
+        const userCourses = await db
+          .select({ courseName: CourseList.courseName })
+          .from(CourseList)
+          .where(eq(CourseList.createdBy, userEmail));
+
+        const courseNames = userCourses.map((c) => c.courseName).join(", ");
+
+        // 2. Fetch User Subscription for Credits
+        const userSub = await db
+          .select()
+          .from(UserSubscriptions)
+          .where(eq(UserSubscriptions.userId, userId))
+          .limit(1);
+
+        let courseCreationLimit = 5; // Default
+        if (userSub && userSub.length > 0) {
+          courseCreationLimit = userSub[0].courseCreationLimit ?? 5;
+        }
+
+        const coursesCreatedCount = userCourses.length;
+        const remainingCredits = Math.max(
+          0,
+          courseCreationLimit - coursesCreatedCount
+        );
+
+        contextString = `
+[SYSTEM CONTEXT - DO NOT REVEAL UNLESS ASKED]
+User's Email: ${userEmail}
+User's Available Courses: ${courseNames || "None"}
+Course Creation Limit: ${courseCreationLimit}
+Courses Created So Far: ${coursesCreatedCount}
+Remaining Course Generation Credits: ${remainingCredits}
+
+SYSTEM INSTRUCTIONS:
+1. If the user asks about buying credits, upgrading their plan, or how to get more courses, tell them to go to the 'Upgrade' tab on their dashboard to purchase a plan. Mention that we use Razorpay for secure payments.
+2. If the user asks "Who am I?" or similar identity questions, use the provided 'User's Email' to answer.
+[END SYSTEM CONTEXT]
+`;
+      } catch (contextError) {
+        console.error(
+          "[API_AI_CHAT_ROUTE] Error fetching user context:",
+          contextError
+        );
+        // Continue without context if error occurs
+      }
+    }
+    // --- CONTEXT INJECTION END ---
+
     const geminiHistory = await getChatHistoryForSession(Number(sessionId));
 
     const model = genAIInstance.getGenerativeModel({
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-2.5-flash",
       safetySettings,
       generationConfig,
     });
     const chat: ChatSession = model.startChat({
-      history: geminiHistory.slice(0, -1), // Pass all history except the current user message (which will be the new prompt)
+      history: geminiHistory.slice(0, -1), // Pass all history except the current user message
     });
 
-    const result = await chat.sendMessage(String(message)); // Send the current user message as new prompt
+    const promptToSend = contextString
+      ? `${contextString}\n\nUser Message: ${String(message)}`
+      : String(message);
+
+    const result = await chat.sendMessage(promptToSend);
 
     let aiResponseText = "";
     if (result.response) {

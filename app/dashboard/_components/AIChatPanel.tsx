@@ -9,7 +9,8 @@ import React, {
   useCallback,
 } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input"; // Kept for reference if needed, but unused now.
+// import { Textarea } from "@/components/ui/textarea"; // Using native textarea for better control over auto-resize
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -213,6 +214,7 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
           message: userMessageContent,
           sessionId: activeSessionId,
           userId: user.id,
+          userEmail: user.primaryEmailAddress?.emailAddress,
         }),
       });
 
@@ -349,12 +351,18 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
         damping: 30,
         duration: 0.4,
       }}
-      className="fixed top-0 right-0 h-full w-full md:w-[400px] lg:w-[480px] bg-white dark:bg-gray-900 shadow-2xl z-[60] flex flex-col border-l dark:border-gray-700"
+      className="fixed top-0 right-0 h-full w-full md:w-[450px] lg:w-[500px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-2xl z-[60] flex flex-col border-l dark:border-gray-700/50"
     >
-      <div className="flex items-center justify-between p-3 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-          Ask TutorialHub AI
-        </h2>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b dark:border-gray-700/50 bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-primary/10 rounded-lg">
+            <MessageSquareHeart className="w-5 h-5 text-primary" />
+          </div>
+          <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            TutorialHub AI
+          </h2>
+        </div>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -362,9 +370,10 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
             onClick={() => createAndActivateNewSession()}
             title="Start New Chat"
             disabled={isLoadingReply || isLoadingSessions}
+            className="hover:bg-gray-200/50 dark:hover:bg-gray-700/50 rounded-full"
           >
             {isLoadingSessions && !activeSessionId ? (
-              <ReloadIcon className="h-5 w-5 animate-spin" />
+              <ReloadIcon className="h-4 w-4 animate-spin" />
             ) : (
               <PlusIcon className="h-5 w-5" />
             )}
@@ -374,13 +383,15 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
             size="icon"
             onClick={onClose}
             title="Close Chat"
+            className="hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-500 rounded-full transition-colors"
           >
             <Cross2Icon className="h-5 w-5" />
           </Button>
         </div>
       </div>
 
-      <div className="p-2 border-b dark:border-gray-700">
+      {/* Session Selector */}
+      <div className="px-4 py-2 border-b dark:border-gray-700/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
         <select
           value={activeSessionId || ""}
           onChange={(e) => {
@@ -390,7 +401,7 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
               setMessages([]);
             }
           }}
-          className="w-full p-2 text-sm border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-primary focus:border-primary disabled:opacity-50"
+          className="w-full p-2 text-sm border-none bg-gray-100/50 dark:bg-gray-800/50 rounded-lg focus:ring-2 focus:ring-primary/50 transition-all cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
           disabled={isLoadingSessions || sessions.length === 0}
           aria-label="Select chat session"
         >
@@ -411,72 +422,108 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
         </select>
       </div>
 
+      {/* Chat Area */}
       <ScrollArea
-        className="flex-grow p-4 space-y-4 bg-gray-100 dark:bg-gray-800/60"
+        className="flex-grow p-4 space-y-6 bg-gray-50/50 dark:bg-gray-900/50"
         id="chat-message-scroll-area"
       >
         <AnimatePresence initial={false}>
           {isLoadingMessages && activeSessionId ? (
-            <div className="flex flex-col space-y-3 py-4">
+            <div className="flex flex-col space-y-4 py-4">
               {[...Array(3)].map((_, i) => (
                 <Skeleton
                   key={`skel-msg-${i}`}
-                  className={`h-16 rounded-xl ${
-                    i % 2 === 0 ? "self-start w-3/4" : "self-end w-2/3"
-                  } bg-gray-300 dark:bg-gray-700`}
+                  className={`h-20 rounded-2xl ${
+                    i % 2 === 0
+                      ? "self-start w-3/4 rounded-tl-none"
+                      : "self-end w-3/4 rounded-tr-none"
+                  } bg-gray-200 dark:bg-gray-800 animate-pulse`}
                 />
               ))}
             </div>
           ) : messages.length === 0 && activeSessionId && !isLoadingMessages ? (
-            <div className="text-center text-gray-500 dark:text-gray-400 py-10 px-2 h-full flex flex-col justify-center items-center">
-              <MessageSquareHeart className="w-16 h-16 text-gray-400 dark:text-gray-500 mb-4" />
-              <p className="text-lg font-medium">Chat with TutorialHub AI</p>
-              <p className="text-sm mt-1">
-                Ask anything about your courses, get help with topics, or
-                explore new ideas!
-              </p>
+            <div className="text-center text-gray-500 dark:text-gray-400 py-10 px-4 h-full flex flex-col justify-center items-center gap-4">
+              <div className="p-4 bg-primary/5 rounded-full ring-1 ring-primary/10">
+                <MessageSquareHeart className="w-12 h-12 text-primary/60" />
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+                  How can I help you today?
+                </p>
+                <p className="text-sm mt-1 text-gray-500 dark:text-gray-400 max-w-[250px] mx-auto">
+                  Ask about your courses, credits, or any programming topic.
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2 mt-4">
+                {["My courses?", "Upgrade plan", "Who am I?"].map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => {
+                      setCurrentMessage(q);
+                      inputRef.current?.focus();
+                    }}
+                    className="text-xs px-3 py-1.5 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-full hover:border-primary hover:text-primary transition-colors shadow-sm"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             messages.map((msg) => (
               <motion.div
                 key={msg.id || `msg-${msg.timestamp}-${msg.role}`}
                 layout
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2 }}
                 className={`flex ${
                   msg.role === "user" ? "justify-end" : "justify-start"
-                } mb-3`}
+                } mb-6 group`}
               >
                 <div
-                  className={`flex items-start max-w-[85%] gap-2.5 ${
+                  className={`flex items-end max-w-[85%] gap-3 ${
                     msg.role === "user" ? "flex-row-reverse" : "flex-row"
                   }`}
                 >
-                  <Avatar className="w-7 h-7 border dark:border-gray-600 text-xs flex-shrink-0">
+                  <Avatar className="w-8 h-8 border-2 border-white dark:border-gray-800 shadow-sm flex-shrink-0">
                     <AvatarImage
                       src={msg.role === "user" ? user?.imageUrl : "/ai.png"}
                     />
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs">
                       {msg.role === "user"
                         ? user?.fullName?.charAt(0).toUpperCase() || "U"
                         : "AI"}
                     </AvatarFallback>
                   </Avatar>
                   <div
-                    className={`p-3 text-sm shadow-md ${
+                    className={`p-4 text-sm shadow-sm relative ${
                       msg.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-l-xl rounded-tr-xl"
-                        : "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-r-xl rounded-tl-xl"
+                        ? "bg-gradient-to-br from-primary to-purple-600 text-white rounded-2xl rounded-tr-sm"
+                        : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-2xl rounded-tl-sm border dark:border-gray-700/50"
                     }`}
                   >
                     <ReactMarkdown
                       components={markdownComponents}
-                      className="prose prose-sm dark:prose-invert max-w-none leading-normal"
+                      className={`prose prose-sm max-w-none leading-relaxed ${
+                        msg.role === "user"
+                          ? "prose-invert"
+                          : "dark:prose-invert"
+                      }`}
                     >
                       {msg.content}
                     </ReactMarkdown>
+                    <span
+                      className={`text-[10px] absolute -bottom-5 ${
+                        msg.role === "user" ? "right-1" : "left-1"
+                      } text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity`}
+                    >
+                      {new Date(msg.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
                   </div>
                 </div>
               </motion.div>
@@ -486,51 +533,54 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
         <div ref={messagesEndRef} className="h-1" />
         {isLoadingReply && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-start mb-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 mb-4 pl-2"
           >
-            <Avatar className="w-7 h-7 border dark:border-gray-600 text-xs flex-shrink-0">
+            <Avatar className="w-6 h-6 border dark:border-gray-700">
               <AvatarImage src="/ai.png" />
               <AvatarFallback>AI</AvatarFallback>
             </Avatar>
-            <div className="ml-2.5 p-3 rounded-r-xl rounded-tl-xl shadow-md bg-white dark:bg-gray-700">
-              <div className="flex items-center space-x-1.5">
-                <span
-                  className="h-1.5 w-1.5 bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse"
-                  style={{ animationDelay: "0s" }}
-                ></span>
-                <span
-                  className="h-1.5 w-1.5 bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse"
-                  style={{ animationDelay: "0.15s" }}
-                ></span>
-                <span
-                  className="h-1.5 w-1.5 bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse"
-                  style={{ animationDelay: "0.3s" }}
-                ></span>
-              </div>
+            <div className="flex items-center space-x-1.5 bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-2xl rounded-tl-sm">
+              <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+              <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+              <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce"></span>
             </div>
           </motion.div>
         )}
       </ScrollArea>
 
-      <div className="p-3 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-        <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-          <Input
-            ref={inputRef}
-            type="text"
+      {/* Input Area */}
+      <div className="p-4 border-t dark:border-gray-700/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
+        <form
+          onSubmit={handleSendMessage}
+          className="relative flex items-end gap-2 bg-gray-100 dark:bg-gray-800 p-2 rounded-xl border border-transparent focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-primary/10 transition-all"
+        >
+          <textarea
+            ref={inputRef as any}
             value={currentMessage}
-            onChange={(e) => setCurrentMessage(e.target.value)}
+            onChange={(e) => {
+              setCurrentMessage(e.target.value);
+              // Auto-resize
+              e.target.style.height = "auto";
+              e.target.style.height = `${Math.min(
+                e.target.scrollHeight,
+                120
+              )}px`;
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
             placeholder={
-              !clerkIsLoaded ||
-              isLoadingSessions ||
-              (!activeSessionId && sessions.length === 0)
-                ? "Initializing chat..."
-                : isLoadingReply
-                ? "TutorialHub AI is typing..."
-                : "Ask anything..."
+              !clerkIsLoaded || isLoadingSessions
+                ? "Initializing..."
+                : "Ask anything... (Shift+Enter for new line)"
             }
-            className="flex-grow text-sm p-3 h-11 rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:ring-primary dark:focus:border-primary"
+            className="flex-grow text-sm bg-transparent border-none focus:ring-0 resize-none max-h-[120px] min-h-[24px] py-2 px-2 dark:text-white placeholder:text-gray-400 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600"
+            rows={1}
             disabled={
               isLoadingReply ||
               !activeSessionId ||
@@ -539,7 +589,6 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
               isLoadingSessions ||
               isLoadingMessages
             }
-            autoFocus={isOpen}
           />
           <Button
             type="submit"
@@ -553,12 +602,16 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
               isLoadingSessions ||
               isLoadingMessages
             }
-            className="rounded-lg w-11 h-11 bg-primary hover:bg-purple-700 shrink-0"
+            className={`rounded-lg w-10 h-10 shrink-0 transition-all ${
+              currentMessage.trim()
+                ? "bg-primary hover:bg-primary/90 shadow-md"
+                : "bg-gray-300 dark:bg-gray-700 text-gray-500"
+            }`}
           >
             {isLoadingReply ? (
-              <ReloadIcon className="h-5 w-5 animate-spin" />
+              <ReloadIcon className="h-4 w-4 animate-spin" />
             ) : (
-              <PaperPlaneIcon className="h-5 w-5" />
+              <PaperPlaneIcon className="h-4 w-4" />
             )}
           </Button>
         </form>
@@ -567,8 +620,7 @@ const AIChatPanel = ({ isOpen, onClose }: AIChatPanelProps) => {
           user?.id &&
           !isLoadingMessages && (
             <p className="text-xs text-center text-red-500 mt-2">
-              Could not load or create a chat session. Try "New Chat" or
-              refresh.
+              Connection lost. Try refreshing.
             </p>
           )}
       </div>
